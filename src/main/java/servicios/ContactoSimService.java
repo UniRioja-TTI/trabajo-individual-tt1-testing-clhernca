@@ -2,9 +2,12 @@ package servicios;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.springframework.stereotype.Service;
+
+import com.tt1.trabajo.utilidades.Solicitud;
 
 import interfaces.InterfazContactoSim;
 import modelo.DatosSimulation;
@@ -14,15 +17,15 @@ import modelo.Entidad;
 @Service
 public class ContactoSimService implements InterfazContactoSim {
 
-	private List<Entidad> entidades = new ArrayList<>();
-	private List<DatosSolicitud> solicitudes = new ArrayList<>();
-	
+    private List<Entidad> entidades = new ArrayList<>();
+    private List<DatosSolicitud> solicitudes = new ArrayList<>();
+
     public ContactoSimService() {
-    	rellenarEntidades();
+        rellenarEntidades();
     }
-	
-	private void rellenarEntidades() {
-		Entidad e1 = new Entidad();
+
+    private void rellenarEntidades() {
+        Entidad e1 = new Entidad();
         e1.setId(1);
         e1.setName("Servidor Web");
         e1.setDescripcion("Nodo principal de servicio HTTP");
@@ -51,28 +54,52 @@ public class ContactoSimService implements InterfazContactoSim {
         entidades.add(e2);
         entidades.add(e3);
         entidades.add(e4);
-        entidades.add(e5);		
-	}
+        entidades.add(e5);
+    }
 
-	@Override
-	public int solicitarSimulation(DatosSolicitud sol) {
-		solicitudes.add(sol);
-		return new Random().nextInt(10000);
-	}
+    @Override
+    public int solicitarSimulation(DatosSolicitud sol) {
+        solicitudes.add(sol);
+        try {
+            Solicitud solicitud = new Solicitud();
 
-	@Override
-	public DatosSimulation descargarDatos(int ticket) {
-		return new DatosSimulation();
-	}
+            List<String> nombres = new ArrayList<>();
+            List<Integer> cantidades = new ArrayList<>();
 
-	@Override
-	public List<Entidad> getEntities() {
-		return entidades;
-	}
+            for (Map.Entry<Integer, Integer> entry : sol.getNums().entrySet()) {
+                // Buscar la entidad por ID para obtener su nombre
+                entidades.stream()
+                        .filter(e -> e.getId() == entry.getKey())
+                        .findFirst()
+                        .ifPresent(e -> nombres.add(e.getName()));
+                cantidades.add(entry.getValue());
+            }
 
-	@Override
-	public boolean isValidEntityId() {
-		return true;
-	}
+            solicitud.setNombreEntidades(nombres);
+            solicitud.setCantidadesIniciales(cantidades);
+
+            solicitudApi.solicitudSolicitarPost("usuario", solicitud);
+
+            return new Random().nextInt(10000);
+
+        } catch (Exception e) {
+            return new Random().nextInt(10000);
+        }
+    }
+
+    @Override
+    public DatosSimulation descargarDatos(int ticket) {
+        return new DatosSimulation();
+    }
+
+    @Override
+    public List<Entidad> getEntities() {
+        return entidades;
+    }
+
+    @Override
+    public boolean isValidEntityId() {
+        return true;
+    }
 
 }
